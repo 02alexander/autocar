@@ -73,7 +73,7 @@ impl CarTracker {
         }
         self.cap.vc.retrieve(&mut img, 0)?;
         let mut smaller_img = opencv::mat();
-        imgproc::resize(&img, &mut smaller_img, opencv::core::Size {width:300, height:300}, 0.0, 0.0, 0)?;
+        imgproc::resize(&img, &mut smaller_img, opencv::core::Size {width:30, height:30}, 0.0, 0.0, 0)?;
         let mut greyscale = opencv::mat();
         imgproc::cvt_color(&smaller_img, &mut greyscale, imgproc::CV_BGR2GRAY, 0)?;
         let param = opencv::types::VectorOfint::new();
