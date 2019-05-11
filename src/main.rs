@@ -5,6 +5,7 @@ extern crate serde_derive;
 extern crate serial;
 extern crate bufstream;
 extern crate opencv;
+extern crate rusty_machine;
 #[macro_use] extern crate lazy_static;
 extern crate rand;
 
@@ -17,11 +18,18 @@ use std::path::PathBuf;
 use std::io::{Write};
 use std::sync::Mutex;
 use bufstream::BufStream;
+
 use opencv::highgui::*;
-use rand::prelude::*;
+use opencv::imgcodecs::*;
+use opencv::videoio::VideoCapture;
 use opencv::imgproc;
+
+use rand::prelude::*;
+
 use std::marker::Send;
 use std::thread;
+
+mod trainer;
 
 struct CarTracker {
     servo_pos: u8,
@@ -61,12 +69,12 @@ impl CarTracker {
     fn new(device: i32, dst: Option<String>) -> Self {
         CarTracker {
             servo_pos: 8,
-            cap: SendVideoCapture {vc: VideoCapture::device(device).unwrap()},
+            cap: SendVideoCapture {vc: VideoCapture::index(device).unwrap()},
             imgs_dst: dst,
             driving: false,
         }
     }
-    fn update(&mut self) -> Result<(), String> {
+    fn update(&mut self) -> Result<(), opencv::Error> {
         let mut img = opencv::mat();
         for _i in 0..5 {
             self.cap.vc.grab()?;
@@ -167,7 +175,7 @@ fn main() {
             panic!("{:?}", e);
         }
 
-        resize_window("kamera", 600, 600).unwrap();
+        resize_window("kamera", opencv::core::Size::new(600,600)).unwrap();
     }
     
     thread::spawn(move || {
