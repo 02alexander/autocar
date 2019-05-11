@@ -19,6 +19,15 @@ src.addEventListener("touchstart", function(e) {
     xhttp.open("POST", "/motor", true);
     xhttp.setRequestHeader("Content-Type", "application/json");
     xhttp.send(JSON.stringify(true));
+    if (Math.abs(e.touches[0].clientX - clientX) > 5) {
+        var xhttp = new XMLHttpRequest();
+        var rect = src.getBoundingClientRect();
+        var width = rect.right-rect.left;
+        xhttp.open("POST", "/servo", true);
+        xhttp.setRequestHeader("Content-Type", "application/json");
+        xhttp.send(JSON.stringify((clientX)/width));
+        clientX = e.touches[0].clientX;
+    }
 }, false);
 
 src.addEventListener("touchend", function(e) {

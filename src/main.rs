@@ -153,13 +153,13 @@ fn stuff(file: PathBuf) -> Option<NamedFile> {
 
 fn main() {
     
-    {
+    {   
         let mut port = SERPORT.lock().unwrap();
         let mut msg = String::from("18");
         msg.push_str("\x0d\x0a");
-        port.write_all(msg.as_bytes()).unwrap();
+        (*port).write_all(msg.as_bytes()).unwrap();
         port.flush().unwrap();
-    }  
+    }
     
     #[cfg(debug_assertions)]
     {

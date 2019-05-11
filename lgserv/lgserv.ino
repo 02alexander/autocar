@@ -17,13 +17,14 @@ void setup() {
 }
 
 void loop() {
-	Serial.setTimeout(100000);
-	int deg = Serial.parseInt();
-	if (deg != 0) {
-		turn_servo(deg-1);
-		controll_motor(deg);
-		if (deg == 18) {
-			digitalWrite(LED_PIN, HIGH);
+	if (Serial.available()) {
+		int deg = Serial.parseInt();
+		if (deg != 0) {
+			turn_servo(deg-1);
+			controll_motor(deg);
+			if (deg == 18) {
+				digitalWrite(LED_PIN, HIGH);
+			}
 		}
 	}
 }

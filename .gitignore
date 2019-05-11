@@ -2,3 +2,4 @@
 **/*.rs.bk
 /imgs
 /.vscode
+/lgserv/lgserv.arduino.avr.uno.*
