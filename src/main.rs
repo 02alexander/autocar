@@ -5,7 +5,6 @@ extern crate serde_derive;
 extern crate serial;
 extern crate bufstream;
 extern crate opencv;
-extern crate rusty_machine;
 #[macro_use] extern crate lazy_static;
 extern crate rand;
 

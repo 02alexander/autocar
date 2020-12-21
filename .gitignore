@@ -3,3 +3,7 @@
 /imgs
 /.vscode
 /lgserv/lgserv.arduino.avr.uno.*
+/*.HDF5
+/models
+/replays
+/lgserv/build/*
