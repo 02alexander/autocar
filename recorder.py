@@ -26,14 +26,18 @@ class Recorder:
     def replay(self):
         filenames = os.listdir(self.directory)
         filenames.sort(key=get_file_digit)
-        for filename in filenames:
-            img = cv2.imread(self.directory+filename)
-            print(img)
+        i = 0
+        while i < len(filenames):
+            img = cv2.imread(self.directory+filenames[i])
             cv2.imshow('recorder-replay', img)
-            print(filename)
+            print(filenames[i])
             k = cv2.waitKey(0)
-            if k == 27:
+            print(k)
+            if k == 108: # l
+                i = i-2
+            if k == 27: # escape
                 break
+            i = i+1
         cv2.destroyWindow('recorder-replay')
 
 

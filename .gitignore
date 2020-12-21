@@ -7,3 +7,4 @@
 /models
 /replays
 /lgserv/build/*
+/__pycache__/

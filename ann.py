@@ -7,6 +7,7 @@ import os
 import termios, sys
 from tensorflow.keras.layers import Dense, Conv2D, Flatten
 from recorder import Recorder
+import argparse
 
 def load_imgs(directory):
     data = []
@@ -138,12 +139,19 @@ def main():
     
     #train()
 
+    parser = argparse.ArgumentParser(description='Controls a lego car autonomously.')
+    parser.add_argument('-r', '--record', help='The directory in which the replay is to be stored')
+    parser.add_argument('--show', help='Opens a windows that shows what the car sees', action='store_true')
+    parser.add_argument('model')
+    args = parser.parse_args()
+    rec = None
+    if args.record is not None:
+        rec = Recorder(args.record)
 
     fd = os.open("/dev/ttyACM0", os.O_WRONLY|os.O_SYNC)
     cap = cv2.VideoCapture(0)
-    rec = Recorder('replay')
 
-    model = tf.keras.models.load_model(sys.argv[1])
+    model = tf.keras.models.load_model(args.model)
     first_run = True
     while True:
         ret, frame = cap.read()
@@ -152,8 +160,11 @@ def main():
         vec = proper.reshape((1,proper.size))
         vec = proc_row(vec).reshape(1,22*30)
         
-        rec.store(vec.reshape(22,30)*250)
-        cv2.imshow('wind', vec.reshape(22,30))
+        if rec is not None:
+            rec.store(vec.reshape(22,30)*255)
+
+        if args.show:
+            cv2.imshow('wind', vec.reshape(22,30))
 
         raw_prediction = model.predict(vec)
         prediction = None
@@ -169,6 +180,9 @@ def main():
             first_run=False 
         os.write(fd, bytes(str(prediction)+"\x0a\x0d", 'ASCII'))
         cv2.waitKey(30)
+
+    if args.show:
+        cv2.destroyAllWindows()
 
     """
     (x,y) = load_imgs("/home/alexander/data/autocar-round-3")
