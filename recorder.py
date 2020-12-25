@@ -42,8 +42,12 @@ class Recorder:
 
 
 def get_file_digit(filename):
-    dot_idx = filename.find('.')
-    return int(filename[0:dot_idx])
+    if filename.find('_') is None:
+        dot_idx = filename.find('.')
+        return int(filename[0:dot_idx])
+    else:
+        idx = filename.find('_')
+        return int(filename[0:idx])
 
 
 def main():

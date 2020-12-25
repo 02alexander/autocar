@@ -8,22 +8,8 @@ import termios, sys
 from tensorflow.keras.layers import Dense, Conv2D, Flatten
 from recorder import Recorder
 import argparse
-
-def load_imgs(directory):
-    data = []
-    positions = []
-    for filename in os.listdir(directory):
-        img = cv2.imread(directory+"/"+filename,0)
-        img = img.reshape(img.size)
-        data.append(img)
-        positions.append(get_servo_pos(filename)-1)
-    data = np.array(data)
-    return (data, np.array(positions))
-
-def get_servo_pos(fname):
-    underscore_idx = fname.find("_")
-    dot_idx = fname.find(".")
-    return int(fname[underscore_idx+1:dot_idx])
+from tensorflow.keras.utils import to_categorical
+from trainer import proc_img
 
 def train_single_output(x, y, x_test=None, y_test=None, epochs=300, reg=0.0):
     model = tf.keras.Sequential([
@@ -46,27 +32,6 @@ def train_models(x, y, epochs, regs):
         (model,_) = train_single_output(x, y, epochs=epochs, reg=reg)
         models.append(model)
     return models
-
-def show_imgs(X, Y, pred_Y):
-    (r,c) = X.shape
-    for row_idx in range(r):
-        print(str(Y[row_idx]) + ", " + str(pred_Y[row_idx]))
-        display_example(X[row_idx])
-
-def display_example(x):
-    img = x
-    r = None
-    c = None
-    if len(x.shape) == 1:
-        l = x.shape
-        img = x.reshape(int(l[0]/30),30)
-    else:
-        (r,c) = x.shape
-    if r != None and r != 1:
-        img = x.reshape(30,30)
-    cv2.imshow("example", img)
-    cv2.waitKey(0)
-    cv2.destroyWindow("example")
 
 def train_15_outputs(model, x, y, x_test=None, y_test=None, reg=0.0, epochs=300):
     model = tf.keras.Sequential([
@@ -99,16 +64,6 @@ def feature_scaling(row):
     max = np.max(row)
     return (row-min)/(max-min)
 
-def proc_row(row):
-    row = row/255.0
-    row = (row>0.313)*1.0
-    img = row.reshape(30,30)
-    img = img[8:,:]
-    return img.reshape(22*30)
-
-def pre_proc(data):
-    return np.apply_along_axis(proc_row, axis=1, arr=data)
-
 # takes every image in srcdir then flips it and stores the flipped image as 
 # flipped<original random str>_<flipped label>.png in dstdir
 # for example FA54HG_1.png becomes flipped_FA54HG_15.png
@@ -121,7 +76,7 @@ def create_flipped_dataset(srcdir, dstdir):
         random_str = file_name[0:file_name.find("_")]
         cv2.imwrite(dstdir+"/"+"flipped"+random_str+"_"+str(flipped_label)+".png", flipped_img)
 
-"""
+
 def train():
     (x,y) = load_imgs("/home/alexander/data/autocar-round-5,6")
     print(np.shape(x))
@@ -133,7 +88,7 @@ def train():
         Dense(15, activation=tf.nn.sigmoid)
     ])
     model.compile('adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
-"""
+
 
 def main():
     
@@ -154,19 +109,35 @@ def main():
     model = tf.keras.models.load_model(args.model)
     first_run = True
     while True:
+        input_shape = model.layers[0].input_shape
+        rows = None
+        if input_shape[1] > 30:
+            rows = int(input_shape[1]/30)
+        else:
+            rows = input_shape[1]
+        
+
         ret, frame = cap.read()
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         proper = cv2.resize(gray, (30, 30))
-        vec = proper.reshape((1,proper.size))
-        vec = proc_row(vec).reshape(1,22*30)
+        vec = proc_img(proper, rows_removed=30-rows)
         
         if rec is not None:
             rec.store(vec.reshape(22,30)*255)
 
         if args.show:
-            cv2.imshow('wind', vec.reshape(22,30))
+            cv2.imshow('wind', vec.reshape(rows,30))
 
-        raw_prediction = model.predict(vec)
+
+        raw_prediction = None
+        if input_shape[1] > 30: # If the model expects a flattened out image. needed for backwards compatibility  
+            raw_prediction = model.predict(vec.reshape(1,rows*30))
+        else:
+            m = np.array(vec)
+            raw_prediction = model.predict(m.reshape(1, rows, 30, 1))
+
+
+
         prediction = None
         (_,c) = raw_prediction.shape
         if c == 1:
