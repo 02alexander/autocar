@@ -96,6 +96,7 @@ def car_controller(predictor_conn, alternating_autonomous=False, record_dir="rep
             print(deg)
             car.turn(deg)
             car.motor(motor_status)
+            local_motor_status = motor_status
             lock.release()
 
             img_lock.acquire()
@@ -109,7 +110,7 @@ def car_controller(predictor_conn, alternating_autonomous=False, record_dir="rep
             img = cv2.resize(gray, (30, 30))
             img_lock.release()
 
-            if (time.time()-tlast_capture) > seconds_between_capture:
+            if (time.time()-tlast_capture) > seconds_between_capture and local_motor_status:
                 tlast_capture = time.time()
                 rec.store(img, deg=local_deg)
 
