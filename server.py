@@ -38,7 +38,9 @@ def camera_reader():
         img_lock.release()
 
 
-def autonomous_driver_server(conn, model_file_name):
+def autonomous_driver_server(conn, model_file_name=None):
+    if model_file_name is None:
+        return
     model = keras.models.load_model(model_file_name)
     while True:
         print("waiting for image")
@@ -183,11 +185,11 @@ def server_thread():
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--dagger', action='store_true')
+    parser.add_argument('--dagger')
     args = parser.parse_args()
 
     parent_conn, child_conn = Pipe()
-    predictor = Process(target=autonomous_driver_server, args=(child_conn, "models/conv10_20.HDF5",))
+    predictor = Process(target=autonomous_driver_server, args=(child_conn, args.dagger,))
     predictor.start()
     s = Thread(target=server_thread)
     s.start()
