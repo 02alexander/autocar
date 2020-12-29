@@ -131,8 +131,6 @@ def car_controller(predictor_conn, alternating_autonomous=False, record_dir="rep
             car.turn(pred)
             lock.release()
 
-
-
 class Server(BaseHTTPRequestHandler):
     def do_GET(self):
         self.send_response(200)
@@ -168,9 +166,8 @@ class Server(BaseHTTPRequestHandler):
                 motor_status = True
         lock.release()
 
-
 def server_thread():
-    hostname = "192.168.10.223"
+    hostname = "0.0.0.0"
     port = 5000
     server = HTTPServer((hostname, port), Server)
 
