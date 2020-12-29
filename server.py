@@ -10,7 +10,7 @@ from flask import (
 from threading import Thread, Lock
 import threading
 from multiprocessing import Process, Pipe
-import keras
+import tensorflow as tf
 import trainer
 import numpy as np
 import argparse
@@ -41,7 +41,7 @@ def camera_reader():
 def autonomous_driver_server(conn, model_file_name=None):
     if model_file_name is None:
         return
-    model = keras.models.load_model(model_file_name)
+    model = tf.keras.models.load_model(model_file_name)
     while True:
         print("waiting for image")
         img = conn.recv()
