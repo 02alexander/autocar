@@ -134,7 +134,7 @@ def main():
             raw_prediction = model.predict(vec.reshape(1,rows*30))
         else:
             m = np.array(vec)
-            raw_prediction = model.predict(m.reshape(1, rows, 30, 1))
+            raw_prediction = model.predict(m.reshape((1, rows, 30, 1)))
 
 
 
@@ -154,29 +154,6 @@ def main():
 
     if args.show:
         cv2.destroyAllWindows()
-
-    """
-    (x,y) = load_imgs("/home/alexander/data/autocar-round-3")
-    x = pre_proc(x)
-    y = y - 1
-    print(y)
-
-    x_train = x[0:400]
-    y_train = y[0:400]
-    x_test = x[400:]
-    y_test = y[400:]
-    train(x_train, y_train)
-    print(x_train.shape)
-    print(x_test.shape)
-    print(x[0].reshape(1,900).shape)
-
-    model = train(x_train, y_train)
-
-
-    print(x[0].reshape(1,900).shape)
-    print(np.round(model.predict(x[0:10])).transpose())
-    print(y[0:10])
-    model.evaluate(x_test,y_test)"""
 
 
 

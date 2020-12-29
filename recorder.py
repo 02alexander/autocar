@@ -18,9 +18,12 @@ class Recorder:
             if digit >= largest_iter:
                 largest_iter = digit
         return largest_iter+1
-    def store(self, image): # cv2 image
+    def store(self, image, deg=None): # cv2 image
         filename = self.directory
-        filename += str(self.cur_iter)+".png" 
+        filename += str(self.cur_iter)
+        if deg is not None:
+            filename += "_"+str(deg)
+        filename += ".png" 
         cv2.imwrite(filename, image)
         self.cur_iter += 1
     def replay(self):
