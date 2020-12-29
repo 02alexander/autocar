@@ -186,6 +186,7 @@ def server_thread():
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--dagger')
+    parser.add_argument('--savedir', '-d')
     args = parser.parse_args()
 
     parent_conn, child_conn = Pipe()
@@ -195,7 +196,7 @@ if __name__ == "__main__":
     s.start()
     cr = Thread(target=camera_reader)
     cr.start()
-    car_controller(parent_conn, alternating_autonomous=args.dagger)
+    car_controller(parent_conn, alternating_autonomous=args.dagger, record_dir=args.savedir)
 
     #controller = Thread(target=car_controller, args=(parent_conn,))
     #controller.start()
