@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 
 import numpy as np
+import tensorflow as tf
 from tensorflow.keras.utils import to_categorical
-import keras
-from keras.models import Sequential
-from keras.layers import Dense, Dropout, Activation, Flatten
-from keras.layers import Conv2D, MaxPooling2D
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense, Dropout, Activation, Flatten
+from tensorflow.keras.layers import Conv2D, MaxPooling2D
 import os
 import cv2
 
@@ -62,7 +62,7 @@ def main():
 
     #model.fit(train_X, train_Y, validation_data=(test_X, test_Y), batch_size=512, epochs=2000)
 
-    model = keras.models.load_model('models/conv10_20.HDF5')
+    model = tf.keras.models.load_model('models/conv10_20.HDF5')
 
     mse = 0.0
     for i in range(np.shape(test_X)[0]):
