@@ -38,14 +38,18 @@ def camera_reader():
         img_lock.release()
 
 
-def autonomous_driver_server(conn, model_file_name=None):
+def autonomous_driver_server(conn, model_file_name=None, linear=False):
     if model_file_name is None:
         return
-    model = tf.keras.models.load_model(model_file_name)
+
+    try:
+        model = tf.keras.models.load_model(model_file_name)
+    except:
+        model = trainer.get_model(linear=linear)
+        model.load_weights(model_file_name) 
+
     while True:
-        print("waiting for image")
         img = conn.recv()
-        print("image received")
         if img is None:
             conn.send(8)
             continue
@@ -72,7 +76,7 @@ def car_controller(predictor_conn, alternating_autonomous=False, record_dir="rep
     global img_lock, lock, car
     
     # how many seconds it takes before it switches between being controlled by model and human.
-    seconds_between_switch = 0.5
+    seconds_between_switch = 1.0
     # when it is controlled by the model it should not record any images.
 
     # how often an image and degree is to be stored.
@@ -86,50 +90,45 @@ def car_controller(predictor_conn, alternating_autonomous=False, record_dir="rep
     while True:
         time.sleep(0.01)
         if (time.time()-tlast_switch) > seconds_between_switch and alternating_autonomous:
-            print("switch")
             tlast_switch = time.time()
             currently_autonomous = not currently_autonomous
 
+        img_lock.acquire()
+        if cur_img is None:
+            img_lock.release()
+            print("continue")
+            continue
+
+        gray = cv2.cvtColor(cur_img, cv2.COLOR_BGR2GRAY)
+        img = cv2.resize(gray, (30,30))
+        img_lock.release()
+
+        lock.acquire()
+        local_motor_status = motor_status
+
         if not currently_autonomous:
-            lock.acquire()
             local_deg = deg
-            print(deg)
-            car.turn(deg)
+            #print("human "+str(deg))
             car.motor(motor_status)
             local_motor_status = motor_status
-            lock.release()
-
-            img_lock.acquire()
-
-            if cur_img is None:
-                img_lock.release()
-                print("continue")
-                continue
-
-            gray = cv2.cvtColor(cur_img, cv2.COLOR_BGR2GRAY)
-            img = cv2.resize(gray, (30, 30))
-            img_lock.release()
-
-            if (time.time()-tlast_capture) > seconds_between_capture and local_motor_status:
-                tlast_capture = time.time()
-                rec.store(img, deg=local_deg)
-
         else:
-            img_lock.acquire()
-
-            if cur_img is None:
-                img_lock.release()
-                continue
-
-            gray = cv2.cvtColor(cur_img, cv2.COLOR_BGR2GRAY)
-            img = cv2.resize(gray, (30, 30))
             predictor_conn.send(img)
             pred = predictor_conn.recv()
-            img_lock.release()
+            #print("predicted "+str(pred))
+            local_deg = pred
 
-            lock.acquire()
-            car.turn(pred)
-            lock.release()
+        car.turn(local_deg)
+
+        if (time.time()-tlast_capture) > seconds_between_capture and local_motor_status:
+            tlast_capture = time.time()
+            rec.store(img, deg=local_deg)
+            if currently_autonomous:
+                print("auto  "+str(local_deg))
+            else:
+                print("human "+str(local_deg))
+        
+        lock.release()
+
 
 class Server(BaseHTTPRequestHandler):
     def do_GET(self):
@@ -154,6 +153,8 @@ class Server(BaseHTTPRequestHandler):
         content_length = int(self.headers['Content-Length'])
         data = self.rfile.read(content_length)
         print(data)
+        if data == b'0':
+            return
 
         lock.acquire()
         if self.path == '/servo':
@@ -185,10 +186,11 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--dagger')
     parser.add_argument('--savedir', '-d')
+    parser.add_argument('--linear', action='store_true')
     args = parser.parse_args()
 
     parent_conn, child_conn = Pipe()
-    predictor = Process(target=autonomous_driver_server, args=(child_conn, args.dagger,))
+    predictor = Process(target=autonomous_driver_server, args=(child_conn, args.dagger,args.linear))
     predictor.start()
     s = Thread(target=server_thread)
     s.start()

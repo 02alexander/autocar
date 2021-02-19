@@ -9,7 +9,7 @@ from tensorflow.keras.layers import Dense, Conv2D, Flatten
 from recorder import Recorder
 import argparse
 from tensorflow.keras.utils import to_categorical
-from trainer import proc_img
+from trainer import proc_img, get_model
 
 def train_single_output(x, y, x_test=None, y_test=None, epochs=300, reg=0.0):
     model = tf.keras.Sequential([
@@ -64,19 +64,6 @@ def feature_scaling(row):
     max = np.max(row)
     return (row-min)/(max-min)
 
-# takes every image in srcdir then flips it and stores the flipped image as 
-# flipped<original random str>_<flipped label>.png in dstdir
-# for example FA54HG_1.png becomes flipped_FA54HG_15.png
-def create_flipped_dataset(srcdir, dstdir):
-    for file_name in os.listdir(srcdir):
-        org_img = cv2.imread(srcdir+"/"+file_name)
-        flipped_img = cv2.flip(org_img, 1)
-        org_label = get_servo_pos(file_name)
-        flipped_label = 16-org_label
-        random_str = file_name[0:file_name.find("_")]
-        cv2.imwrite(dstdir+"/"+"flipped"+random_str+"_"+str(flipped_label)+".png", flipped_img)
-
-
 def train():
     (x,y) = load_imgs("/home/alexander/data/autocar-round-5,6")
     print(np.shape(x))
@@ -98,6 +85,7 @@ def main():
     parser.add_argument('-r', '--record', help='The directory in which the replay is to be stored')
     parser.add_argument('--show', help='Opens a windows that shows what the car sees', action='store_true')
     parser.add_argument('model')
+    parser.add_argument('--linear', help='Needed if the model loaded is linear and it\'s weights are stored.', action='store_true')
     args = parser.parse_args()
     rec = None
     if args.record is not None:
@@ -106,7 +94,12 @@ def main():
     fd = os.open("/dev/ttyACM0", os.O_WRONLY|os.O_SYNC)
     cap = cv2.VideoCapture(0)
 
-    model = tf.keras.models.load_model(args.model)
+    try:
+        model = tf.keras.models.load_model(args.model)
+    except:
+        model = get_model(linear=args.linear)
+        model.load_weights(args.model) 
+    
     first_run = True
     while True:
         input_shape = model.layers[0].input_shape
